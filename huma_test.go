@@ -98,7 +98,11 @@ func (m *MyTextUnmarshaler) UnmarshalText(text []byte) error {
 }
 
 func (m *MyCustomUnmarshaler) UnmarshalText(text []byte) error {
-	m.value, _ = strconv.Atoi(string(text)[1:])
+	var err error
+	m.value, err = strconv.Atoi(string(text)[1:])
+	if err != nil {
+		return err
+	}
 	m.raw = string(text)
 	return nil
 }
@@ -685,6 +689,44 @@ func TestFeatures(t *testing.T) {
 			},
 			Method: http.MethodGet,
 			URL:    "/test?mynumber=>50,<100",
+		},
+		{
+			Name: "parseSliceInto-unmarshal-error",
+			Register: func(t *testing.T, api huma.API) {
+				huma.Register(api, huma.Operation{
+					Method: http.MethodGet,
+					Path:   "/test",
+				}, func(ctx context.Context, i *struct {
+					MyInts []MyCustomUnmarshaler `query:"mynumber"`
+				}) (*struct{}, error) {
+					return nil, nil
+				})
+			},
+			Method: http.MethodGet,
+			URL:    "/test?mynumber=!fail",
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusUnprocessableEntity, resp.Code)
+				assert.Contains(t, resp.Body.String(), "invalid value")
+			},
+		},
+		{
+			Name: "parseSliceInto-unsupported-type",
+			Register: func(t *testing.T, api huma.API) {
+				huma.Register(api, huma.Operation{
+					Method: http.MethodGet,
+					Path:   "/test",
+				}, func(ctx context.Context, i *struct {
+					// []struct{} represents a struct that does not implement TextUnmarshaler
+					MyInts []struct{} `query:"mynumber"`
+				}) (*struct{}, error) {
+					return nil, nil
+				})
+			},
+			Method: http.MethodGet,
+			URL:    "/test?mynumber=fail",
+			Assert: func(t *testing.T, resp *httptest.ResponseRecorder) {
+				assert.Equal(t, http.StatusInternalServerError, resp.Code)
+			},
 		},
 		{
 			Name: "parse-with-param-receiver",
