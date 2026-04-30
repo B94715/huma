@@ -691,7 +691,7 @@ func TestFeatures(t *testing.T) {
 			URL:    "/test?mynumber=>50,<100",
 		},
 		{
-			Name: "parseIntoSlice-unmarshal-error",
+			Name: "parseSliceInto-unmarshal-error",
 			Register: func(t *testing.T, api huma.API) {
 				huma.Register(api, huma.Operation{
 					Method: http.MethodGet,
@@ -710,7 +710,7 @@ func TestFeatures(t *testing.T) {
 			},
 		},
 		{
-			Name: "parseIntoSlice-unsupported-type",
+			Name: "parseSliceInto-unsupported-type",
 			Register: func(t *testing.T, api huma.API) {
 				huma.Register(api, huma.Operation{
 					Method: http.MethodGet,
