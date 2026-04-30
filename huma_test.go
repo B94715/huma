@@ -671,6 +671,26 @@ func TestFeatures(t *testing.T) {
 			URL:    "/test?myuuid=9993a7ca-4c0f-4f22-b388-2677e0ec91ab,46cfcb8b-473f-4c0a-9eef-2cdcbc68c2bc",
 		},
 		{
+			Name: "parse-custom-type-slice",
+			Register: func(t *testing.T, api huma.API) {
+				huma.Register(api, huma.Operation{
+					Method: http.MethodGet,
+					Path:   "/test",
+				}, func(ctx context.Context, i *struct {
+					MyInts []MyCustomUnmarshaler `query:"mynumber"`
+				}) (*struct{}, error) {
+					assert.Equal(t, 50, i.MyInts[0].value)
+					assert.Equal(t, ">50", i.MyInts[0].raw)
+					assert.Equal(t, 100, i.MyInts[1].value)
+					assert.Equal(t, "<100", i.MyInts[1].raw)
+
+					return nil, nil
+				})
+			},
+			Method: http.MethodGet,
+			URL:    "/test?mynumber=>50,<100",
+		},
+		{
 			Name: "parseIntoSlice-unmarshal-error",
 			Register: func(t *testing.T, api huma.API) {
 				huma.Register(api, huma.Operation{
